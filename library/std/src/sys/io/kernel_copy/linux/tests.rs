@@ -130,7 +130,7 @@ fn bench_file_to_file_copy(b: &mut test::Bencher) {
         .write(true)
         .open(src_path)
         .unwrap();
-    src.write(&vec![0u8; BYTES]).unwrap();
+    src.write_all(&vec![0u8; BYTES]).unwrap();
 
     let sink_path = temp_path.join("file-copy-bench-sink");
     let mut sink = crate::fs::OpenOptions::new()
@@ -160,7 +160,7 @@ fn bench_file_to_socket_copy(b: &mut test::Bencher) {
         .write(true)
         .open(src_path)
         .unwrap();
-    src.write(&vec![0u8; BYTES]).unwrap();
+    src.write_all(&vec![0u8; BYTES]).unwrap();
 
     let sink_drainer = crate::net::TcpListener::bind("localhost:0").unwrap();
     let mut sink = crate::net::TcpStream::connect(sink_drainer.local_addr().unwrap()).unwrap();
@@ -199,7 +199,7 @@ fn bench_file_to_uds_copy(b: &mut test::Bencher) {
         .write(true)
         .open(src_path)
         .unwrap();
-    src.write(&vec![0u8; BYTES]).unwrap();
+    src.write_all(&vec![0u8; BYTES]).unwrap();
 
     let (mut sink, mut sink_drainer) = crate::os::unix::net::UnixStream::pair().unwrap();
 
@@ -256,14 +256,14 @@ fn bench_socket_pipe_socket_copy(b: &mut test::Bencher) {
         let mut sink_buf = vec![0u8; 1024 * 1024];
         remote_end.set_nonblocking(true).unwrap();
         loop {
-            match remote_end.write(&mut sink_buf[..]) {
+            match remote_end.write_all(&mut sink_buf[..]) {
                 Err(err) if err.kind() == ErrorKind::WouldBlock => {}
                 Ok(_) => {}
                 err => {
                     err.expect("write failed");
                 }
             };
-            match remote_end.read(&mut sink_buf[..]) {
+            match remote_end.read_exact(&mut sink_buf[..]) {
                 Err(err) if err.kind() == ErrorKind::WouldBlock => {}
                 Ok(_) => {}
                 err => {
